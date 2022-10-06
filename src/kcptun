@@ -1,85 +1,31 @@
 #!/bin/sh
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-#
-# If you have suggestions or find some bug of this script, please create an issue on this page
-# https://github.com/zhanhb/kcptun-sip003-wrapper/issues
 set -e
 
-BASENAME="${BASENAME:-${0##*/}}"
-UNAME_M="${UNAME_M:-"$(uname -m)"}"
-UNAME_S="${UNAME_S:-"$(uname -s)"}"
+has_builtin() {
+    [ "$(command -v "$1")" = "$1" ]
+}
 
 main() {
     local type bin key0 value0 key1 value1
 
-    search_in() {
-        local saved_path name
-        saved_path="$PATH"
-        export PATH="$1"
-        for type in client server; do
-            for name in "${2}_$type" "${2}-$type" "${type}_${3}_$4"; do
-                if hash "$name" 2>/dev/null; then
-                    export PATH="$saved_path"
-                    bin="$1/$name"
-                    return
-                fi
-            done
-            if [ "$4" = amd64 ]; then
-                name="${type}_${3}_386"
-                if hash "$name" 2>/dev/null; then
-                    export PATH="$saved_path"
-                    bin="$1/$name"
-                    return
-                fi
-            fi
-        done
-        export PATH="$saved_path"
-        return 1
-    }
-
     findBinary() {
-        local os arch bn
-        os=$(printf "%s" "$UNAME_S" | awk '{print tolower($0)}')
-        case "$os" in MINGW* | CYGWIN* | mingw* | cygwin*) os=windows ;; *) ;; esac
-        arch="$(printf "%s" "$UNAME_M" | sed -e 's/^[Ii][3-6]86$/386/;s/^[Xx]86$/386/;s/^[Xx]\(86[-_]\)\{0,1\}64$/amd64/;s/^[Aa][Mm][Dd]64$/amd64/')"
-        bn="${BASENAME%.*}"
+        type=$(echo ${type:-c} | cut -c1)
+        bin=$(which "kcp${type}")
+        if has_builtin $bin; then return; fi
 
-        if search_in . "$bn" "$os" "$arch"; then return; fi
-
-        for type in client server; do
-            for bin in "${bn}_$type" "${bn}-$type"; do
-                if hash "$bin" 2>/dev/null; then return; fi
-            done
-        done
-
-        echo "no $bn client or server found" >&2
+        echo "no kcp${type} found" >&2
         exit 1
     }
 
     setHosts() {
+        type=$(echo ${type:-c} | cut -c1)
         setAddr() {
             local value="$3:$4"
             case "$3" in "["*) ;; *":"*) value="[$3]:$4";; esac
             eval "key$1=\"--\$2\""
             eval "value$1=\"\$value\""
         }
-        if [ "$type" = 'client' ]; then
+        if [ "$type" = "client" -o "$type" = 'c' ]; then
             setAddr 0 localaddr "${1:-127.0.0.1}" "${2:-12948}"
             setAddr 1 remoteaddr "${3:-vps}" "${4:-29900}"
         else
@@ -95,18 +41,9 @@ main() {
             result=
             while true; do
                 offset=$((offset+1))
-                ch="${1:$offset:1}"
+                ch=$(echo -n ${1} | cut -c$((offset+1)))
                 [ -n "$ch" ] || break
-                if [ "$ch" = "\\" ]; then
-                    offset=$((offset+1))
-                    ch="${1:$offset:1}"
-                    if [ -z "$ch" ]; then
-                        echo "nothing following final escape in $1" >&2
-                        exit 1
-                    fi
-                else
-                    case "$2" in *"$ch"*) break;; esac
-                fi
+                case "$2" in *"$ch"*) break;; esac
                 result="$result$ch"
             done
         }
@@ -121,10 +58,18 @@ main() {
                     echo "empty key in $opts" >&2
                     exit 1
                 fi
+                if [ "$result" = "client" -o "$result" = "c" ]; then
+                    type='client'
+                    continue
+                fi
+                if [ "$result" = "server" -o "$result" = "s" ]; then
+                    type='server'
+                    continue
+                fi
                 set -- "$@" "--$result"
                 if [ "$ch" = "=" ]; then
                     nextToken "$opts" ";"
-                    set -- "$@" "$result"
+                    set -- "$@=$result"
                 fi
                 [ -n "$ch" ] || break
             done
@@ -132,17 +77,23 @@ main() {
             # rotate the arguments
             while [ "$len" -gt 0 ]; do
                 len=$((len-1))
-                set -- "$@" "$1"
+                set -- "$@=$1"
                 shift
             done
         fi
 
+        findBinary
+        setHosts "$SS_LOCAL_HOST" "$SS_LOCAL_PORT" "$SS_REMOTE_HOST" "$SS_REMOTE_PORT"
+        echo "#" "$bin" "$key0=$value0" "$key1=$value1" "$@"
+
+        [ "V$(find /var/run -name '*-plugin')" != "V" ] && {
+            echo "$bin" | tee -a $(find /var/run -name '*-plugin')
+        }
+
         unset SS_LOCAL_HOST SS_LOCAL_PORT SS_REMOTE_HOST SS_REMOTE_PORT SS_PLUGIN_OPTIONS
-        exec "$bin" "$key0" "$value0" "$key1" "$value1" "$@"
+        exec "$bin" "$key0=$value0" "$key1=$value1" "$@"
     }
 
-    findBinary
-    setHosts "$SS_LOCAL_HOST" "$SS_LOCAL_PORT" "$SS_REMOTE_HOST" "$SS_REMOTE_PORT"
     parseAndExecute "$@"
 }
 
