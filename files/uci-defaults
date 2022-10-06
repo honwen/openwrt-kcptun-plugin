@@ -1,0 +1,3 @@
+#!/bin/sh
+[ ! -f /usr/bin/kcptun-plugin ] && ln -sf kcptun /usr/bin/kcptun-plugin
+exit 0

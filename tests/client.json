@@ -1,0 +1,11 @@
+{
+  "server": "127.0.0.1",
+  "server_port": 54321,
+  "password": "password",
+  "method": "plain",
+  "plugin": "./src/kcptun",
+  "plugin_opts": "client;crypt=none;mode=fast2;nocomp;quiet",
+  "mode": "tcp_only",
+  "local_address": "0.0.0.0",
+  "local_port": 1080
+}
