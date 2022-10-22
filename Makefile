@@ -8,8 +8,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=kcptun-plugin
-PKG_VERSION:=1.0.4
-PKG_RELEASE:=20221006
+PKG_VERSION:=1.0.5
+PKG_RELEASE:=20221022
 PKG_MAINTAINER:=honwen <https://github.com/honwen>
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)-$(PKG_RELEASE)

@@ -4,6 +4,6 @@
   "password": "password",
   "method": "plain",
   "plugin": "./src/kcptun",
-  "plugin_opts": "server;crypt=none;mode=fast2;nocomp;quiet",
+  "plugin_opts": "server;port-upper=54333;crypt=none;mode=fast2;nocomp;quiet",
   "mode": "tcp_only"
 }
