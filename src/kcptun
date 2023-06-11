@@ -1,4 +1,5 @@
 #!/bin/sh
+
 set -e
 
 has_builtin() {
@@ -22,7 +23,7 @@ main() {
         type=$(echo ${type:-c} | cut -c1)
         setAddr() {
             local value="$3:$4"
-            case "$3" in "["*) ;; *":"*) value="[$3]:$4";; esac
+            case "$3" in "["*) ;; *":"*) value="[$3]:$4" ;; esac
             eval "key$1=\"--\$2\""
             eval "value$1=\"\$value\""
         }
@@ -41,10 +42,10 @@ main() {
         nextToken() {
             result=
             while true; do
-                offset=$((offset+1))
-                ch=$(echo -n ${1} | cut -c$((offset+1)))
+                offset=$((offset + 1))
+                ch=$(echo -n ${1} | cut -c$((offset + 1)))
                 [ -n "$ch" ] || break
-                case "$2" in *"$ch"*) break;; esac
+                case "$2" in *"$ch"*) break ;; esac
                 result="$result$ch"
             done
         }
@@ -87,7 +88,7 @@ main() {
 
             # rotate the arguments
             while [ "$len" -gt 0 ]; do
-                len=$((len-1))
+                len=$((len - 1))
                 set -- "$@=$1"
                 shift
             done
@@ -115,4 +116,5 @@ main() {
     echo "skip unsupported option \"$1\"" >&2
     shift
 }
+
 main "$@"

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2021-2022 honwen <https://github.com/honwen>
+# Copyright (C) 2021-2023 honwen <https://github.com/honwen>
 #
 # This is free software, licensed under the GNU General Public License v3.
 # See /LICENSE for more information.
@@ -8,8 +8,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=kcptun-plugin
-PKG_VERSION:=1.0.5
-PKG_RELEASE:=20221022
+PKG_VERSION:=1.0.6
+PKG_RELEASE:=20230611
 PKG_MAINTAINER:=honwen <https://github.com/honwen>
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)-$(PKG_RELEASE)

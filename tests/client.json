@@ -1,6 +1,6 @@
 {
   "server": "127.0.0.1",
-  "server_port": 54330,
+  "server_port": 54321,
   "password": "password",
   "method": "plain",
   "plugin": "./src/kcptun",
